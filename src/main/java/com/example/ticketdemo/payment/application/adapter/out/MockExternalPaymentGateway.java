@@ -1,4 +1,4 @@
-package com.example.ticketdemo.payment.application.adatper.out;
+package com.example.ticketdemo.payment.application.adapter.out;
 
 import com.example.ticketdemo.payment.application.port.out.ExternalPaymentGateway;
 import com.example.ticketdemo.payment.domain.PaymentResult;

@@ -6,4 +6,5 @@ import java.math.BigDecimal;
 
 public interface PaymentProcessor {
     Payment processPayment(String paymentMethod, BigDecimal price);
+    void refund(Long paymentId);
 }

@@ -24,4 +24,9 @@ public class TicketRepositoryAdapter implements TicketRepository {
     public Optional<Ticket> findById(Long ticketId) {
         return jpaTicketRepository.findById(ticketId);
     }
+
+    @Override
+    public Optional<Ticket> findByIdWithLock(Long ticketId) {
+        return jpaTicketRepository.findByIdWithLock(ticketId);
+    }
 }

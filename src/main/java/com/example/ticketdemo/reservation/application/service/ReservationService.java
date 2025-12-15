@@ -1,6 +1,7 @@
 package com.example.ticketdemo.reservation.application.service;
 
 import com.example.ticketdemo.payment.application.port.out.PaymentProcessor;
+import com.example.ticketdemo.payment.application.port.service.PaymentService;
 import com.example.ticketdemo.payment.domain.Payment;
 import com.example.ticketdemo.reservation.application.port.command.ReservationCommand;
 import com.example.ticketdemo.reservation.application.port.in.ReservationTicketUseCase;
@@ -14,41 +15,54 @@ import org.springframework.stereotype.Service;
 @Service
 public class ReservationService implements ReservationTicketUseCase {
 
-    private final ReservationRepository reservationRepository;
-    private final TicketService ticketService;
-    private final PaymentProcessor paymentProcessor;
+  private final ReservationRepository reservationRepository;
+  private final TicketService ticketService;
+  private final PaymentService paymentService;
 
-    public ReservationService(ReservationRepository reservationRepository, TicketService ticketService, PaymentProcessor paymentProcessor) {
-        this.reservationRepository = reservationRepository;
-        this.ticketService = ticketService;
-        this.paymentProcessor = paymentProcessor;
+  public ReservationService(ReservationRepository reservationRepository, TicketService ticketService, PaymentService paymentService) {
+    this.reservationRepository = reservationRepository;
+    this.ticketService = ticketService;
+    this.paymentService = paymentService;
+  }
+
+  @Override
+  @Transactional // 원자적 연산 확보
+  public Reservation reservationTicket(ReservationCommand command) {
+    // 1. 티켓 정보 조회
+    // 비관락으로 해당 티켓에 접근 제한
+    Ticket ticket = ticketService.findTicketByTicketIdWithLock(command.ticketId());
+
+    // 2. 결제 정보 생성
+    Payment payment = paymentService.createPendingPayment(
+        command.userId(),
+        ticket.getTicketId(),
+        ticket.getPrice(),
+        command.paymentMethod()
+    );
+
+    // 3. 티켓 상태 변경
+    // TODO: command.userId() 가 아니라 userService.findByUserId(command.userId())를 통해 찾아낸 user의 정보로 변경되어야 함
+    ticket.reserve(command.userId());
+    ticketService.save(ticket);
+
+    // 4. 예약 정보 저장
+    Reservation reservation = new Reservation(
+        command.userId(),
+        ticket.getTicketId(),
+        payment.getPaymentId()
+    );
+    reservationRepository.save(reservation);
+
+    try {
+      // 5. 실제 결제 처리
+      paymentService.processPayment(payment);
+
+      return reservation;
+
+    } catch (Exception e) {
+      // 보상
+      paymentService.refundPayment(payment);
+      throw new RuntimeException("결제 처리 실패.");
     }
-
-    @Override
-    @Transactional
-    public Reservation reservationTicket(ReservationCommand command) {
-        // 1. 사용자, 티켓 정보 조회
-        // Ticket 조회 실패처리 -> Ticket 도메인의 역할
-        Ticket ticket = ticketService.findTicketByTicketId(command.ticketId());
-
-        // 2. 결제 프로세스
-        // 결제 실패 처리 -> 결제 도메인의 역할
-        Payment payment = paymentProcessor.processPayment(command.paymentMethod(), ticket.getPrice());
-
-        // 3. 티켓 상태 변경
-        // TODO: command.userId() 가 아니라 command.userId()를 통해 찾아낸 user의 정보로 변경되어야 함 -> 지금 굳이 안해도 될 것 같아서..
-        ticket.reserve(command.userId());
-        ticketService.save(ticket);
-
-        // 4. 예약 정보 저장
-        Reservation reservation = new Reservation(
-                command.userId(),
-                ticket.getTicketId(),
-                payment.getPaymentId()
-        );
-        reservationRepository.save(reservation);
-
-        // 5. 예약 정보 반환
-        return reservation;
-    }
+  }
 }

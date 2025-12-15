@@ -1,5 +1,5 @@
 package com.example.ticketdemo.payment.domain;
 
-public enum PaymentType {
+public enum PaymentMethod {
     CREDIT_CARD
 }

@@ -17,6 +17,10 @@ public class TicketService {
         return ticketRepository.findById(ticketId).orElseThrow(() -> new RuntimeException("존재하지 않는 티켓."));
     }
 
+    public Ticket findTicketByTicketIdWithLock(Long ticketId) {
+        return ticketRepository.findByIdWithLock(ticketId).orElseThrow(() -> new RuntimeException("존재하지 않는 티켓."));
+    }
+
     public Ticket save(Ticket ticket) {
         return ticketRepository.save(ticket);
     }

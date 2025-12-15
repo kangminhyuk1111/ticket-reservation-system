@@ -44,9 +44,11 @@ public class Payment {
     }
 
     public static Payment createPending(Long userId, Long ticketId, BigDecimal amount, PaymentMethod paymentMethod) {
-        return new Payment(
+        Payment payment = new Payment(
             userId, ticketId, amount, paymentMethod
         );
+        payment.status = PaymentStatus.PENDING;
+        return payment;
     }
 
     public Payment(BigDecimal amount) {

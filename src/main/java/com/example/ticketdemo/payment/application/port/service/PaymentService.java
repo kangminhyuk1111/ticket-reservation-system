@@ -43,15 +43,8 @@ public class PaymentService {
   }
 
   @Transactional
-  public void refundPayment(Payment payment) {
-    try {
-      paymentProcessor.refund(payment.getPaymentId());
-
-      payment.markAsRefunded();
-      paymentRepository.save(payment);
-
-    } catch (Exception e) {
-      throw new RuntimeException("환불 처리 실패", e);
-    }
+  public void markPaymentFailed(Payment payment) {
+    payment.markAsFailed();
+    paymentRepository.save(payment);
   }
 }

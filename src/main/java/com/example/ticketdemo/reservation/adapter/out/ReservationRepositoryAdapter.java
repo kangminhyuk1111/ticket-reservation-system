@@ -17,4 +17,9 @@ public class ReservationRepositoryAdapter implements ReservationRepository {
     public Reservation save(Reservation reservation) {
         return jpaReservationRepository.save(reservation);
     }
+
+    @Override
+    public void deleteById(Long reservationId) {
+        jpaReservationRepository.deleteById(reservationId);
+    }
 }

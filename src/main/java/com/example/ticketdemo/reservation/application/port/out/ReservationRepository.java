@@ -4,4 +4,6 @@ import com.example.ticketdemo.reservation.domain.Reservation;
 
 public interface ReservationRepository {
     Reservation save(Reservation reservation);
+
+    void deleteById(Long reservationId);
 }

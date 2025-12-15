@@ -59,4 +59,13 @@ public class Ticket {
 
         this.reservedByUserId = userId;
     }
+
+    public void cancel() {
+        if (this.ticketStatus != TicketStatus.RESERVED) {
+            throw new RuntimeException("예약된 티켓만 취소할 수 있습니다. 현재 상태: " + this.ticketStatus);
+        }
+
+        this.ticketStatus = TicketStatus.AVAILABLE;
+        this.reservedByUserId = null;
+    }
 }

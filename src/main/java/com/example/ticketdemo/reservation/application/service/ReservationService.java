@@ -1,6 +1,5 @@
 package com.example.ticketdemo.reservation.application.service;
 
-import com.example.ticketdemo.payment.application.port.out.PaymentProcessor;
 import com.example.ticketdemo.payment.application.port.service.PaymentService;
 import com.example.ticketdemo.payment.domain.Payment;
 import com.example.ticketdemo.reservation.application.port.command.ReservationCommand;
@@ -60,9 +59,18 @@ public class ReservationService implements ReservationTicketUseCase {
       return reservation;
 
     } catch (Exception e) {
-      // 보상
-      paymentService.refundPayment(payment);
-      throw new RuntimeException("결제 처리 실패.");
+      // 보상 트랜잭션 (Compensation Transaction): 이미 수행된 작업들을 명시적으로 되돌림
+      // 5-1. 티켓 예약 취소 (RESERVED -> AVAILABLE)
+      ticket.cancel();
+      ticketService.save(ticket);
+
+      // 5-2. 예약 정보 삭제
+      reservationRepository.deleteById(reservation.getReservationId());
+
+      // 5-3. 결제 상태를 FAILED로 기록 (이력 추적용)
+      paymentService.markPaymentFailed(payment);
+
+      throw new RuntimeException("결제 처리 실패: " + e.getMessage(), e);
     }
   }
 }

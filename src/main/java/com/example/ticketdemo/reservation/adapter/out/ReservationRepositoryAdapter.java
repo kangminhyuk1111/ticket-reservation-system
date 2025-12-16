@@ -2,6 +2,7 @@ package com.example.ticketdemo.reservation.adapter.out;
 
 import com.example.ticketdemo.reservation.application.port.out.ReservationRepository;
 import com.example.ticketdemo.reservation.domain.Reservation;
+import java.util.Optional;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -21,5 +22,10 @@ public class ReservationRepositoryAdapter implements ReservationRepository {
     @Override
     public void deleteById(Long reservationId) {
         jpaReservationRepository.deleteById(reservationId);
+    }
+
+    @Override
+    public Optional<Reservation> findByUserIdAndTicketId(Long userId, Long ticketId) {
+        return jpaReservationRepository.findByUserIdAndTicketId(userId, ticketId);
     }
 }

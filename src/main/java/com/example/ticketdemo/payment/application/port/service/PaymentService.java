@@ -3,10 +3,9 @@ package com.example.ticketdemo.payment.application.port.service;
 import com.example.ticketdemo.payment.application.port.out.PaymentProcessor;
 import com.example.ticketdemo.payment.application.port.out.PaymentRepository;
 import com.example.ticketdemo.payment.domain.Payment;
-import com.example.ticketdemo.payment.domain.PaymentMethod;
+import com.example.ticketdemo.payment.domain.PaymentResult;
 import java.math.BigDecimal;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class PaymentService {
@@ -19,32 +18,26 @@ public class PaymentService {
     this.paymentRepository = paymentRepository;
   }
 
-  public Payment createPendingPayment(Long userId, Long ticketId, BigDecimal price, String paymentMethod) {
-    PaymentMethod method = PaymentMethod.valueOf(paymentMethod);
-
-    Payment payment = Payment.createPending(userId, ticketId, price, method);
+  public Payment createPayment(Long reservationId, Long userId, BigDecimal amount) {
+    Payment payment = new Payment(reservationId, userId, amount);
 
     return paymentRepository.save(payment);
   }
 
-  @Transactional
-  public void processPayment(Payment payment) {
-    try {
-      paymentProcessor.processPayment(payment.getPaymentMethod().toString(), payment.getAmount());
+  public PaymentResult processPayment(Long paymentId, String paymentMethod) {
+    Payment payment = paymentRepository.findById(paymentId)
+        .orElseThrow(() -> new RuntimeException("존재하지 않는 결제입니다."));
 
-      payment.markAsCompleted();
-      paymentRepository.save(payment);
+    PaymentResult result = paymentProcessor.processPayment(payment, paymentMethod);
 
-    } catch (Exception e) {
+    if (result.success()) {
+      payment.markAsCompleted("PG_PROVIDER", result.transactionId());
+    } else {
       payment.markAsFailed();
-      paymentRepository.save(payment);
-      throw e;
     }
-  }
 
-  @Transactional
-  public void markPaymentFailed(Payment payment) {
-    payment.markAsFailed();
     paymentRepository.save(payment);
+
+    return result;
   }
 }

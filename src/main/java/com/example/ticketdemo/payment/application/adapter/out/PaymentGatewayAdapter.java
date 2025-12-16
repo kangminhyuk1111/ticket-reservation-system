@@ -6,8 +6,6 @@ import com.example.ticketdemo.payment.domain.Payment;
 import com.example.ticketdemo.payment.domain.PaymentResult;
 import org.springframework.stereotype.Component;
 
-import java.math.BigDecimal;
-
 @Component
 public class PaymentGatewayAdapter implements PaymentProcessor {
 
@@ -18,24 +16,13 @@ public class PaymentGatewayAdapter implements PaymentProcessor {
   }
 
   @Override
-  public Payment processPayment(String paymentType, BigDecimal price) {
-    // 외부 결제 Gateway 호출
-    PaymentResult result = paymentGateway.requestPayment(price.longValue(), paymentType);
-
-    if (!result.success()) {
-      throw new RuntimeException("결제 실패: " + result.message());
-    }
-
-    return new Payment(price);
-  }
-
-  @Override
-  public void refund(Long paymentId) {
-    // 외부 환불 Gateway 호출
-    PaymentResult result = paymentGateway.requestRefund(paymentId);
-
-    if (!result.success()) {
-      throw new RuntimeException("환불 실패: " + result.message());
-    }
+  public PaymentResult processPayment(Payment payment, String paymentMethod) {
+    // 외부 PG사 결제 Gateway 호출
+    // 결제 결과를 그대로 반환 (성공/실패 모두)
+    // 예외를 던지지 않고 결과 객체로 반환
+    return paymentGateway.requestPayment(
+        payment.getAmount().longValue(),
+        paymentMethod
+    );
   }
 }

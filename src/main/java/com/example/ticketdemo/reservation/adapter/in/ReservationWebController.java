@@ -23,7 +23,7 @@ public class ReservationWebController {
                 new ReservationCommand(
                         request.userId(),
                         request.ticketId(),
-                        request.paymentMethod()
+                        request.buyingAmount()
                 )
         );
 

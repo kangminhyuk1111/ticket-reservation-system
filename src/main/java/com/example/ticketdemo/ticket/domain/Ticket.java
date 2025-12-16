@@ -1,7 +1,6 @@
 package com.example.ticketdemo.ticket.domain;
 
 import jakarta.persistence.*;
-
 import java.math.BigDecimal;
 
 @Entity
@@ -12,60 +11,61 @@ public class Ticket {
     private Long ticketId;
 
     @Column(nullable = false)
-    private String name;
+    private Long concertId;
 
     @Column(nullable = false)
-    private BigDecimal price;
+    private BigDecimal amount;
 
     @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
-    private TicketStatus ticketStatus;
+    private Long totalQuantity;
 
-    @Column(nullable = true)
-    private Long reservedByUserId;
+    @Column(nullable = false)
+    private Long remainingQuantity;
 
     public Ticket() {
-    }
-
-    public Ticket(String name, BigDecimal price) {
-        this.name = name;
-        this.price = price;
-        this.ticketStatus = TicketStatus.AVAILABLE;
-        this.reservedByUserId = null;
-    }
-
-    public Ticket(Long ticketId, String name, BigDecimal price) {
-        this.ticketId = ticketId;
-        this.name = name;
-        this.price = price;
-        this.ticketStatus = TicketStatus.AVAILABLE;
-        this.reservedByUserId = null;
     }
 
     public Long getTicketId() {
         return ticketId;
     }
 
-    public BigDecimal getPrice() {
-        return price;
+    public Long getConcertId() {
+        return concertId;
     }
 
-    public void reserve(Long userId) {
-        if (this.ticketStatus != TicketStatus.AVAILABLE) {
-            throw new RuntimeException("이미 예약된 티켓입니다. 현재 상태: " + this.ticketStatus);
-        }
-
-        this.ticketStatus = TicketStatus.RESERVED;
-
-        this.reservedByUserId = userId;
+    public Long getTotalQuantity() {
+        return totalQuantity;
     }
 
-    public void cancel() {
-        if (this.ticketStatus != TicketStatus.RESERVED) {
-            throw new RuntimeException("예약된 티켓만 취소할 수 있습니다. 현재 상태: " + this.ticketStatus);
-        }
-
-        this.ticketStatus = TicketStatus.AVAILABLE;
-        this.reservedByUserId = null;
+    public Long getRemainingQuantity() {
+        return remainingQuantity;
     }
+
+    public BigDecimal getAmount() {
+        return amount;
+    }
+
+  public void deduct(Long buyingAmount) {
+    if (buyingAmount <= 0) {
+      throw new RuntimeException("구매 수량은 0보다 커야 합니다.");
+    }
+
+    if (remainingQuantity < buyingAmount) {
+      throw new RuntimeException("재고가 부족합니다. (요청: " + buyingAmount + ", 재고: " + remainingQuantity + ")");
+    }
+
+    this.remainingQuantity -= buyingAmount;
+  }
+
+  public void earn(Long returningAmount) {
+    if (returningAmount <= 0) {
+      throw new RuntimeException("복구 수량은 0보다 커야 합니다.");
+    }
+
+    if (remainingQuantity + returningAmount > totalQuantity) {
+      throw new RuntimeException("총 수량을 초과할 수 없습니다.");
+    }
+
+    this.remainingQuantity += returningAmount;
+  }
 }

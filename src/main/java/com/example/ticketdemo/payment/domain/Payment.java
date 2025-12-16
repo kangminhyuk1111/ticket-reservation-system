@@ -1,8 +1,8 @@
 package com.example.ticketdemo.payment.domain;
 
 import jakarta.persistence.*;
-
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 public class Payment {
@@ -12,79 +12,66 @@ public class Payment {
     private Long paymentId;
 
     @Column(nullable = false)
-    private Long userId;
+    private Long reservationId;
 
     @Column(nullable = false)
-    private Long ticketId;
+    private Long userId;
 
     @Column(nullable = false)
     private BigDecimal amount;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private PaymentMethod paymentMethod;
+    private PaymentStatus paymentStatus = PaymentStatus.PENDING;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private PaymentStatus status;
+    @Column
+    private String pgProvider;
+
+    @Column
+    private String pgTransactionId;
+
+    @Column
+    private LocalDateTime paidAt;
 
     public Payment() {
     }
 
-    public Payment(Long paymentId, BigDecimal amount) {
-        this.paymentId = paymentId;
-        this.amount = amount;
-    }
-
-    public Payment(Long userId, Long ticketId, BigDecimal amount, PaymentMethod paymentMethod) {
+    public Payment(Long reservationId, Long userId, BigDecimal amount) {
+        this.reservationId = reservationId;
         this.userId = userId;
-        this.ticketId = ticketId;
         this.amount = amount;
-        this.paymentMethod = paymentMethod;
-    }
-
-    public static Payment createPending(Long userId, Long ticketId, BigDecimal amount, PaymentMethod paymentMethod) {
-        Payment payment = new Payment(
-            userId, ticketId, amount, paymentMethod
-        );
-        payment.status = PaymentStatus.PENDING;
-        return payment;
-    }
-
-    public Payment(BigDecimal amount) {
-        this.amount = amount;
-    }
-
-    public void markAsCompleted() {
-        if (this.status != PaymentStatus.PENDING) {
-            throw new IllegalStateException("PENDING 상태인 결제만 완료 처리할 수 있습니다");
-        }
-        this.status = PaymentStatus.COMPLETE;
-    }
-
-    public void markAsRefunded() {
-        if (this.status != PaymentStatus.COMPLETE) {
-            throw new IllegalStateException("COMPLETE 상태인 결제만 환불 처리할 수 있습니다");
-        }
-        this.status = PaymentStatus.REFUNDED;
-    }
-
-    public void markAsFailed() {
-        if (this.status != PaymentStatus.PENDING) {
-            throw new IllegalStateException("PENDING 상태인 결제만 결제 진행 가능합니다.");
-        }
-        this.status = PaymentStatus.FAILED;
     }
 
     public Long getPaymentId() {
         return paymentId;
     }
 
+    public Long getUserId() {
+        return userId;
+    }
+
+    public PaymentStatus getPaymentStatus() {
+        return paymentStatus;
+    }
+
     public BigDecimal getAmount() {
         return amount;
     }
 
-    public PaymentMethod getPaymentMethod() {
-        return paymentMethod;
+    public void markAsCompleted(String pgProvider, String pgTransactionId) {
+        if (this.paymentStatus != PaymentStatus.PENDING) {
+            throw new IllegalStateException("PENDING 상태에서만 완료 처리할 수 있습니다.");
+        }
+        this.paymentStatus = PaymentStatus.COMPLETE;
+        this.pgProvider = pgProvider;
+        this.pgTransactionId = pgTransactionId;
+        this.paidAt = LocalDateTime.now();
+    }
+
+    public void markAsFailed() {
+        if (this.paymentStatus != PaymentStatus.PENDING) {
+            throw new IllegalStateException("PENDING 상태에서만 실패 처리할 수 있습니다.");
+        }
+        this.paymentStatus = PaymentStatus.FAILED;
     }
 }
